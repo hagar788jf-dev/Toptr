@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Topup GG - Top Up Game + Ntfy (TYT_fiq)</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0B1120 0%, #19213A 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        /* LOADING SCREEN */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0a0f1f, #03060c);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-content {
+            text-align: center;
+            animation: fadeUp 0.6s ease;
+        }
+        .loading-logo {
+            font-size: 4rem;
+            font-weight: 800;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #FACC15, #FF8C00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.15);
+            border-top: 5px solid #FACC15;
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            margin: 1.5rem auto;
+        }
+        .loading-text {
+            color: #B9C7D9;
+            font-weight: 500;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        .app-container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+            opacity: 0;
+            animation: containerFadeIn 0.6s forwards;
+        }
+        @keyframes containerFadeIn { to { opacity: 1; } }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .brand-header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #FFD966, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-header p { color: #A0B3D9; margin-top: 8px; }
+
+        .topup-card {
+            background: rgba(18, 25, 45, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 2.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,215,0,0.2);
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+        }
+        @media (max-width: 780px) {
+            .form-grid { grid-template-columns: 1fr; gap: 1.8rem; }
+            .topup-card { padding: 1.5rem; }
+            .brand-header h1 { font-size: 2rem; }
+        }
+
+        .input-group {
+            margin-bottom: 1.6rem;
+        }
+        .input-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #E2E8F0;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .input-group label i { color: #FACC15; width: 20px; }
+        select, input {
+            width: 100%;
+            padding: 14px 18px;
+            background: #0F172A;
+            border: 1.5px solid #2D3A5E;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            color: #F1F5F9;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s;
+        }
+        select:focus, input:focus { border-color: #FACC15; box-shadow: 0 0 0 3px rgba(250,204,21,0.2); }
+        .payment-methods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .payment-option {
+            flex: 1;
+            min-width: 90px;
+            background: #0F172A;
+            border: 1.5px solid #2D3A5E;
+            border-radius: 1.2rem;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #CBD5E1;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        input[type="radio"] { display: none; }
+        .payment-option.active {
+            background: linear-gradient(145deg, #FACC15, #FFB347);
+            border-color: #FFD966;
+            color: #0F172A;
+            font-weight: 700;
+            box-shadow: 0 5px 12px rgba(250,204,21,0.3);
+        }
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(95deg, #FACC15, #FF8800);
+            border: none;
+            padding: 16px;
+            border-radius: 2rem;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: #0A0F1F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            margin-top: 20px;
+            box-shadow: 0 8px 20px rgba(250,204,21,0.25);
+        }
+        .btn-submit:active { transform: scale(0.97); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .summary-card {
+            background: rgba(5, 10, 22, 0.7);
+            border-radius: 1.8rem;
+            padding: 1.6rem;
+            border: 1px solid rgba(250,204,21,0.3);
+            height: fit-content;
+        }
+        .summary-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #FACC15;
+            border-left: 4px solid #FACC15;
+            padding-left: 16px;
+            margin-bottom: 1.5rem;
+        }
+        .summary-detail { display: flex; flex-direction: column; gap: 1rem; }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #2D3A5E;
+            font-size: 0.95rem;
+        }
+        .summary-row .label { color: #9CA9C9; }
+        .summary-row .value { color: #EFF3FF; font-weight: 600; text-align: right; }
+        .total-price {
+            font-size: 1.4rem;
+            margin-top: 0.8rem;
+            background: #0F172A;
+            padding: 12px;
+            border-radius: 1.2rem;
+            text-align: center;
+        }
+        .total-price .grand-total {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #FACC15;
+            margin-left: 8px;
+        }
+        .toast-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1E293B;
+            backdrop-filter: blur(10px);
+            padding: 14px 28px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            z-index: 1500;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-left: 6px solid #FACC15;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; bottom: 0; }
+            to { opacity: 1; bottom: 30px; }
+        }
+        .error-text { color: #FF8A7A; font-size: 0.75rem; margin-top: 5px; margin-left: 10px; }
+        .ntfy-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            background: #0F172A;
+            padding: 12px 18px;
+            border-radius: 1.2rem;
+            border: 1px solid #2D3A5E;
+        }
+        .ntfy-group .input-group {
+            flex: 2;
+            margin-bottom: 0;
+        }
+        .ntfy-group .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            padding: 0;
+            border: none;
+            height: auto;
+        }
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+            accent-color: #FACC15;
+            margin: 0;
+        }
+        hr { border-color: #2D3A5E; margin: 8px 0; }
+        .ntfy-badge {
+            font-size: 12px;
+            color: #FACC15;
+            text-align: center;
+            margin-top: 10px;
+            background: rgba(250,204,21,0.1);
+            padding: 6px;
+            border-radius: 2rem;
+        }
+        .fixed-topic-badge {
+            background: rgba(250,204,21,0.2);
+            border-radius: 2rem;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #FFD966;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+        <div class="loading-logo"><i class="fas fa-gamepad"></i> Topup GG</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Menghubungkan ke ntfy.sh/TYT_fiq ...</div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="app-container" style="display: none;">
+    <div class="brand-header">
+        <h1><i class="fas fa-crown"></i> Topup GG <i class="fas fa-bell"></i> + ntfy</h1>
+        <p>Top Up Game | Notifikasi Push Real-time ke <strong>ntfy.sh/TYT_fiq</strong></p>
+    </div>
+
+    <div class="topup-card">
+        <div class="form-grid">
+            <!-- KIRI: FORM -->
+            <div class="form-section">
+                <div class="input-group">
+                    <label><i class="fas fa-gamepad"></i> Pilih Game</label>
+                    <select id="gameSelect">
+                        <option value="Mobile Legends">🎮 Mobile Legends (Diamond)</option>
+                        <option value="Free Fire">🔥 Free Fire (Diamond)</option>
+                        <option value="PUBG Mobile">🪖 PUBG Mobile (UC)</option>
+                        <option value="Genshin Impact">✨ Genshin Impact (Crystal)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-id-card"></i> User ID / Game ID</label>
+                    <input type="text" id="userId" placeholder="Contoh: 12345678" autocomplete="off">
+                    <div id="userIdError" class="error-text"></div>
+                </div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-gem"></i> Pilih Nominal Top Up</label>
+                    <select id="nominalSelect"></select>
+                </div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-wallet"></i> Metode Pembayaran</label>
+                    <div class="payment-methods" id="paymentMethods">
+                        <label class="payment-option" data-method="QRIS">
+                            <i class="fas fa-qrcode"></i> QRIS
+                            <input type="radio" name="payment" value="QRIS" hidden>
+                        </label>
+                        <label class="payment-option" data-method="OVO">
+                            <i class="fab fa-cc-visa"></i> OVO
+                            <input type="radio" name="payment" value="OVO" hidden>
+                        </label>
+                        <label class="payment-option" data-method="Dana">
+                            <i class="fas fa-money-bill-wave"></i> Dana
+                            <input type="radio" name="payment" value="Dana" hidden>
+                        </label>
+                        <label class="payment-option" data-method="GoPay">
+                            <i class="fas fa-mobile-alt"></i> GoPay
+                            <input type="radio" name="payment" value="GoPay" hidden>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-phone-alt"></i> No. HP (opsional)</label>
+                    <input type="tel" id="phoneNumber" placeholder="0812xxxxxx">
+                </div>
+
+                <!-- Bagian NTFY Integration - Topic sudah fixed ke TYT_fiq -->
+                <div class="ntfy-group">
+                    <div class="fixed-topic-badge">
+                        <i class="fas fa-link"></i> ntfy.sh/<strong>TYT_fiq</strong>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enableNtfy" checked disabled>
+                        <label for="enableNtfy" style="margin:0; cursor:pointer;">Kirim notifikasi (wajib)</label>
+                    </div>
+                </div>
+                <div class="ntfy-badge">
+                    <i class="fas fa-info-circle"></i> Setiap top up sukses akan mengirim notifikasi ke <strong>https://ntfy.sh/TYT_fiq</strong>
+                </div>
+
+                <button id="topupBtn" class="btn-submit"><i class="fas fa-bolt"></i> TOP UP SEKARANG <i class="fas fa-arrow-right"></i></button>
+            </div>
+
+            <!-- KANAN: RINGKASAN -->
+            <div class="summary-card">
+                <div class="summary-title"><i class="fas fa-clipboard-list"></i> Ringkasan Pesanan</div>
+                <div class="summary-detail" id="summaryContainer">
+                    <div class="summary-row"><span class="label">Game:</span><span class="value" id="summaryGame">-</span></div>
+                    <div class="summary-row"><span class="label">User ID:</span><span class="value" id="summaryUserId">-</span></div>
+                    <div class="summary-row"><span class="label">Nominal & Item:</span><span class="value" id="summaryNominal">-</span></div>
+                    <div class="summary-row"><span class="label">Metode Bayar:</span><span class="value" id="summaryPayment">-</span></div>
+                    <div class="total-price">
+                        <span>Total Tagihan : </span>
+                        <span class="grand-total" id="totalPriceDisplay">Rp0</span>
+                    </div>
+                </div>
+                <hr>
+                <div style="font-size: 12px; color:#7F8EA3; text-align:center; margin-top: 16px;">
+                    <i class="fas fa-shield-alt"></i> Transaksi aman & instant + ntfy notifikasi ke TYT_fiq
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================== DATA PRODUK =========================
+    const productData = {
+        "Mobile Legends": { currency: "Diamond", nominal: [{amount:50,price:15000},{amount:100,price:29000},{amount:250,price:70000},{amount:500,price:135000},{amount:1000,price:260000}] },
+        "Free Fire": { currency: "Diamond", nominal: [{amount:70,price:14000},{amount:140,price:27000},{amount:355,price:65000},{amount:720,price:130000},{amount:1500,price:262000}] },
+        "PUBG Mobile": { currency: "UC", nominal: [{amount:60,price:12000},{amount:325,price:63000},{amount:660,price:118000},{amount:1500,price:270000}] },
+        "Genshin Impact": { currency: "Crystal", nominal: [{amount:60,price:12500},{amount:300,price:59500},{amount:980,price:179000},{amount:1980,price:349000}] }
+    };
+
+    // FIXED NTFY TOPIC - TYT_fiq
+    const NTFY_TOPIC = "TYT_fiq";
+    const NTFY_BASE_URL = "https://ntfy.sh";
+
+    // DOM elements
+    const gameSelect = document.getElementById('gameSelect');
+    const nominalSelect = document.getElementById('nominalSelect');
+    const userIdInput = document.getElementById('userId');
+    const phoneInput = document.getElementById('phoneNumber');
+    const summaryGame = document.getElementById('summaryGame');
+    const summaryUserId = document.getElementById('summaryUserId');
+    const summaryNominal = document.getElementById('summaryNominal');
+    const summaryPayment = document.getElementById('summaryPayment');
+    const totalPriceSpan = document.getElementById('totalPriceDisplay');
+    const topupBtn = document.getElementById('topupBtn');
+    const enableNtfyCheck = document.getElementById('enableNtfy');
+
+    let currentPaymentMethod = "QRIS";
+    let currentNominalObj = { amount: 0, price: 0 };
+    let currentGame = "Mobile Legends";
+
+    function formatRupiah(angka) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+    }
+
+    // update dropdown nominal
+    function updateNominalDropdown() {
+        const game = gameSelect.value;
+        const data = productData[game];
+        if (!data) return;
+        nominalSelect.innerHTML = '';
+        data.nominal.forEach((item, idx) => {
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = `${item.amount} ${data.currency} - ${formatRupiah(item.price)}`;
+            option.setAttribute('data-price', item.price);
+            option.setAttribute('data-amount', item.amount);
+            nominalSelect.appendChild(option);
+        });
+        nominalSelect.selectedIndex = 0;
+        updateCurrentNominal();
+    }
+
+    function updateCurrentNominal() {
+        const idx = nominalSelect.selectedIndex;
+        const game = gameSelect.value;
+        const nominalList = productData[game]?.nominal;
+        if (nominalList && idx >= 0) currentNominalObj = { ...nominalList[idx] };
+        else currentNominalObj = { amount: 0, price: 0 };
+        updateSummaryAndTotal();
+    }
+
+    function updateSummaryAndTotal() {
+        const game = gameSelect.value;
+        const userId = userIdInput.value.trim() || "(belum diisi)";
+        const nominalAmount = currentNominalObj.amount;
+        const currency = productData[game]?.currency || "Coin";
+        summaryGame.innerText = game;
+        summaryUserId.innerText = userId === "" ? "-" : userId;
+        summaryNominal.innerText = `${nominalAmount} ${currency}`;
+        summaryPayment.innerText = currentPaymentMethod;
+        totalPriceSpan.innerText = formatRupiah(currentNominalObj.price);
+    }
+
+    function validateUserId() {
+        const userId = userIdInput.value.trim();
+        const errorDiv = document.getElementById('userIdError');
+        if (userId === "") { errorDiv.innerText = "⚠️ User ID harus diisi"; return false; }
+        if (userId.length < 4) { errorDiv.innerText = "⚠️ Minimal 4 karakter"; return false; }
+        errorDiv.innerText = "";
+        return true;
+    }
+
+    // Payment selection
+    function initPaymentSelection() {
+        const paymentOptions = document.querySelectorAll('.payment-option');
+        paymentOptions.forEach(opt => {
+            opt.addEventListener('click', function() {
+                const method = this.getAttribute('data-method');
+                if (method) {
+                    const radio = this.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = true;
+                    paymentOptions.forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPaymentMethod = method;
+                    updateSummaryAndTotal();
+                }
+            });
+            if (opt.getAttribute('data-method') === 'QRIS') {
+                opt.classList.add('active');
+                const radio = opt.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
+            }
+        });
+    }
+
+    // Fungsi Kirim Notifikasi ke ntfy.sh dengan topic TYT_fiq
+    async function sendNtfyNotification(title, message, tags = ["white_check_mark", "moneybag"]) {
+        if (!enableNtfyCheck.checked) return false;
+        const url = `${ntfy.sh/TYT_fiq}/${TYT_fiq}`;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain',
+                    'Title': title,
+                    'Priority': 'high',
+                    'Tags': tags.join(',')
+                },
+                body: message
+            });
+            if (response.ok) {
+                console.log(`✅ Notifikasi terkirim ke ntfy.sh/${TYT_fiq}`);
+                return true;
+            } else {
+                console.warn('Gagal kirim ntfy:', response.status);
+                return false;
+            }
+        } catch (err) {
+            console.error('Error ntfy:', err);
+            return false;
+        }
+    }
+
+    function showToast(msg, isError = false) {
+        const existing = document.querySelector('.toast-message');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i> ${msg}`;
+        if (isError) toast.style.borderLeftColor = "#FF5A5A";
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3500);
+    }
+
+    // Proses Top Up + Kirim ntfy ke TYT_fiq
+    async function processTopUp() {
+        if (!validateUserId()) {
+            showToast("❌ Isi User ID dengan benar!", true);
+            return;
+        }
+        const userId = userIdInput.value.trim();
+        const selectedGame = gameSelect.value;
+        const nominalAmount = currentNominalObj.amount;
+        const price = currentNominalObj.price;
+        const method = currentPaymentMethod;
+        const phone = phoneInput.value.trim() || "tidak diisi";
+        if (nominalAmount === 0) {
+            showToast("⚠️ Pilih nominal terlebih dahulu", true);
+            return;
+        }
+
+        topupBtn.disabled = true;
+        topupBtn.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Memproses & mengirim notifikasi ke TYT_fiq...`;
+
+        // Simulasi transaksi sukses
+        setTimeout(async () => {
+            const trxId = "GG" + Math.floor(Math.random() * 10000000);
+            const currency = productData[selectedGame]?.currency || "Coin";
+            const nominalText = `${nominalAmount} ${currency}`;
+            const totalHarga = formatRupiah(price);
+            const successMsgLocal = `✅ Top Up Berhasil! ${nominalText} untuk ID: ${userId} via ${method}. Transaksi #${trxId}`;
+            showToast(successMsgLocal);
+
+            // ============== KIRIM NOTIFIKASI KE NTFY (TYT_fiq) ==============
+            const titleNotif = `🎉 Top Up Sukses - Topup GG`;
+            const bodyNotif = `Game: ${selectedGame}\nUser ID: ${userId}\nNominal: ${nominalText}\nMetode: ${method}\nTotal: ${totalHarga}\nNo HP: ${phone}\nID Transaksi: ${trxId}\n\nTerima kasih telah top up di Topup GG!\n\nCek: https://ntfy.sh/${NTFY_TOPIC}`;
+            
+            // Kirim notifikasi ke topic TYT_fiq
+            const sendResult = await sendNtfyNotification(titleNotif, bodyNotif, ["white_check_mark", "game_die"]);
+            if (sendResult) {
+                showToast(`📢 Notifikasi berhasil dikirim ke ntfy.sh/${NTFY_TOPIC}`);
+            } else {
+                showToast(`⚠️ Gagal kirim notifikasi ke ntfy.sh/${NTFY_TOPIC}, cek koneksi`, true);
+            }
+
+            topupBtn.disabled = false;
+            topupBtn.innerHTML = `<i class="fas fa-bolt"></i> TOP UP SEKARANG <i class="fas fa-arrow-right"></i>`;
+        }, 1800);
+    }
+
+    // Event listeners
+    gameSelect.addEventListener('change', () => {
+        currentGame = gameSelect.value;
+        updateNominalDropdown();
+        updateSummaryAndTotal();
+        validateUserId();
+    });
+    nominalSelect.addEventListener('change', updateCurrentNominal);
+    userIdInput.addEventListener('input', () => { updateSummaryAndTotal(); validateUserId(); });
+    topupBtn.addEventListener('click', processTopUp);
+
+    // Inisialisasi
+    updateNominalDropdown();
+    updateCurrentNominal();
+    initPaymentSelection();
+    validateUserId();
+
+    // HILANGKAN LOADING SCREEN
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const loading = document.getElementById('loadingScreen');
+            const main = document.getElementById('mainApp');
+            if (loading && main) {
+                loading.style.opacity = '0';
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    main.style.display = 'block';
+                }, 400);
+            }
+        }, 1500);
+    });
+    if (document.readyState === 'complete') {
+        setTimeout(() => {
+            if (document.getElementById('loadingScreen')?.style.display !== 'none') {
+                document.getElementById('loadingScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'block';
+                }, 400);
+            }
+        }, 1500);
+    }
+</script>
+</body>
+</html>
